@@ -1,6 +1,3 @@
-
-
-Index · HTML
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,15 +8,13 @@ Index · HTML
 <meta name="theme-color" content="#25368A">
 <title>Anote su tensión</title>
 <script>
-  /* ====== CONFIGURACIÓN: pegue aquí el "firebaseConfig" de su proyecto ====== */
   window.FIREBASE_CONFIG = {
     apiKey: "AIzaSyAgy25f_D5ia6I4izNSyTQMVvqQqDv7CmQ",
     authDomain: "tension-tracker-1267b.firebaseapp.com",
     projectId: "tension-tracker-1267b",
     appId: "1:912155916325:web:ba370ea32b2a113d40e7cc"
   };
-  window.PACIENTE = "Maximiliano Murillo";   // Nombre que aparece en las hojas nuevas
-  /* ========================================================================== */
+  window.PACIENTE = "Maximiliano Murillo";
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -112,14 +107,12 @@ Index · HTML
 </head>
 <body>
 <div class="app">
- 
-  <!-- Aviso si falta configurar -->
+
   <div id="setup" hidden>
     <h1>Anote su tensión</h1>
-    <div class="note">Falta conectar la base de datos. Abra <b>index.html</b> y pegue el bloque <b>firebaseConfig</b> de su proyecto en las líneas de configuración del principio.</div>
+    <div class="note">Falta conectar la base de datos.</div>
   </div>
- 
-  <!-- Entrada -->
+
   <div id="login" class="login" hidden>
     <h1>Anote su tensión</h1>
     <label class="field"><span>Correo electrónico</span><input id="email" type="email" autocomplete="username"></label>
@@ -127,23 +120,22 @@ Index · HTML
     <button class="btn" id="loginBtn">Entrar</button>
     <div class="msg" id="loginMsg"></div>
   </div>
- 
-  <!-- Aplicación -->
+
   <div id="main" hidden>
     <div class="top">
       <h1>Anote su tensión</h1>
       <span class="saved" id="saved"></span>
     </div>
     <div class="who"><span id="me"></span><button class="link" id="logout">Salir</button></div>
- 
+
     <div class="row">
       <label class="field"><span>Tomas de</span><select id="ownerSel"></select></label>
       <button class="btn alt" id="refresh" style="margin-bottom:1px" title="Traer los últimos datos">Actualizar</button>
     </div>
     <div class="note" id="roNote" hidden>Solo puede ver estas tomas. Para anotar, la persona debe darle permiso.</div>
- 
+
     <div id="empty" class="note" hidden>Todavía no hay ninguna semana anotada.</div>
- 
+
     <div id="sheetUI">
       <label class="field"><span>Nombre del paciente</span><input id="patient" type="text" placeholder="Maximiliano Murillo"></label>
       <label class="field"><span>Semana</span><select id="sheetSel"></select></label>
@@ -152,19 +144,19 @@ Index · HTML
       <label class="field"><span>Empezar una semana nueva el día</span><input id="newDate" type="date"></label>
       <button class="btn" id="newBtn" style="margin-bottom:1px">Añadir</button>
     </div>
- 
+
     <div id="dayUI">
       <div class="banner">Anote su tensión</div>
       <div class="days" id="days"></div>
       <div class="fecha">Fecha:<b id="fechaTxt"></b></div>
       <table class="grid" id="grid"></table>
- 
+
       <div class="summary">
         <h2>Media de esta semana</h2>
         <div class="avg" id="avg"></div>
         <p class="ref">Referencia habitual para tomas en casa: por debajo de 135/85. Comente siempre sus cifras con su médico.</p>
       </div>
- 
+
       <div class="actions">
         <button class="btn" id="printBtn">Imprimir hoja</button>
         <button class="btn alt" id="pdfBtn">Descargar PDF</button>
@@ -172,7 +164,7 @@ Index · HTML
       </div>
     </div>
     <div class="msg" id="msg"></div>
- 
+
     <div class="share" id="shareUI">
       <h2>Compartir mis tomas</h2>
       <p>Las personas de esta lista pueden ver sus tomas al entrar con su correo. Deben tener una cuenta en la app.</p>
@@ -181,19 +173,19 @@ Index · HTML
       <label class="chk"><input type="checkbox" id="shareEdit"> También puede anotar tomas</label>
       <div class="actions"><button class="btn full" id="shareBtn">Compartir</button></div>
     </div>
- 
+
     <div class="prevwrap" id="prevUI">
       <h2>Así se imprimirá</h2>
       <div class="preview"><div class="sheet" id="sheet"></div></div>
     </div>
   </div>
 </div>
- 
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 import { getFirestore, collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
- 
+
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const PACIENTE=window.PACIENTE||'';
@@ -205,14 +197,13 @@ function addDays(iso,n){const d=parse(iso);d.setDate(d.getDate()+n);return toIso
 function fmt(iso){const d=parse(iso);return d.getDate()+' '+MESES[d.getMonth()];}
 function blank(){return [['',''],['',''],['','']];}
 function emptyDays(start){const a=[];for(let i=0;i<7;i++)a.push({date:addDays(start,i),m:blank(),t:blank()});return a;}
-// Firestore no admite listas dentro de listas: se guardan como {s,d}
 const toFs=days=>days.map(d=>({date:d.date,m:d.m.map(p=>({s:p[0],d:p[1]})),t:d.t.map(p=>({s:p[0],d:p[1]}))}));
 const fromFs=days=>days.map(d=>({date:d.date,m:d.m.map(p=>[p.s||'',p.d||'']),t:d.t.map(p=>[p.s||'',p.d||''])}));
- 
+
 let auth=null, db=null, user=null, myEmail='';
 let owners=[], myShares=[], ownerId=null, sheets=[], sheetId=null, day=0;
 let saveT=null, pending=false;
- 
+
 const owner=()=>owners.find(o=>o.id===ownerId);
 const sheet=()=>sheets.find(s=>s.id===sheetId);
 const canEdit=()=>{const o=owner();return !!o&&(o.mine||o.canEdit);};
@@ -225,8 +216,7 @@ function errText(e){
   if(c.includes('unavailable'))return 'Sin conexión. Inténtelo de nuevo.';
   return e?.message||'Error desconocido.';
 }
- 
-/* ---------- Arranque y sesión ---------- */
+
 function init(){
   const cfg=window.FIREBASE_CONFIG||{};
   if(!cfg.apiKey||cfg.apiKey.startsWith('PEGUE')){$('setup').hidden=false;return;}
@@ -256,8 +246,7 @@ async function enter(u){
   $('me').textContent=u.email;$('newDate').value=toIso(new Date());
   await loadOwners();await loadSheets();
 }
- 
-/* ---------- Datos ---------- */
+
 async function loadOwners(){
   try{
     const [mine,toMe]=await Promise.all([
@@ -308,8 +297,7 @@ async function flush(){
     status('Guardado');
   }catch(e){pending=true;status('Sin guardar');say('No se pudo guardar. Revise la conexión y pulse Actualizar.',true);}
 }
- 
-/* ---------- Pintar ---------- */
+
 function renderOwners(){
   $('ownerSel').innerHTML=owners.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}${o.mine?'':(o.canEdit?' · puede anotar':' · solo ver')}</option>`).join('');
   $('ownerSel').value=ownerId;
@@ -363,8 +351,7 @@ function renderSheet(){
       <tr><td></td><td colspan="2" class="c">Por la mañana</td><td></td><td colspan="2" class="c">Por la tarde</td></tr>
       <tr><td></td><td class="c">Máxima</td><td class="c">Mínima</td><td></td><td class="c">Máxima</td><td class="c">Mínima</td></tr>${rows(d)}</table>`).join('');
 }
- 
-/* ---------- PDF con el formato de la hoja ---------- */
+
 function makePdf(){
   const {jsPDF}=window.jspdf, pdf=new jsPDF({unit:'mm',format:'a4'});
   const s=sheet(), x0=15, W=180, cols=[27,35,35,25,29,29], hs=[5,4.5,4.5,5,5,5];
@@ -398,8 +385,7 @@ function makePdf(){
   });
   return pdf;
 }
- 
-/* ---------- Eventos ---------- */
+
 $('loginBtn').addEventListener('click',login);
 $('pass').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 $('logout').addEventListener('click',async()=>{if(pending)await flush();await signOut(auth);});
@@ -428,11 +414,11 @@ $('delBtn').addEventListener('click',async()=>{
   sheets=sheets.filter(x=>x.id!==s.id);sheetId=sheets[0]?.id||null;day=todayIndex();renderAll();say('Semana borrada.');
 });
 $('shareBtn').addEventListener('click',async()=>{
-  const email=$('shareEmail').value.trim().toLowerCase(), canEdit=$('shareEdit').checked;
+  const email=$('shareEmail').value.trim().toLowerCase(), canEditNew=$('shareEdit').checked;
   if(!/^[^\s@\/]+@[^\s@\/]+\.[^\s@\/]+$/.test(email)){say('Escriba un correo válido.',true);return;}
   if(email===myEmail){say('Ese es su propio correo.',true);return;}
   if(myShares.some(r=>r.viewerEmail===email)){say('Ya comparte sus tomas con ese correo.',true);return;}
-  try{await setDoc(doc(db,'shares',user.uid+'_'+email),{owner:user.uid,ownerEmail:myEmail,viewerEmail:email,canEdit});}
+  try{await setDoc(doc(db,'shares',user.uid+'_'+email),{owner:user.uid,ownerEmail:myEmail,viewerEmail:email,canEdit:canEditNew});}
   catch(e){say('No se pudo compartir: '+errText(e),true);return;}
   $('shareEmail').value='';$('shareEdit').checked=false;say('Compartido con '+email+'.');await loadOwners();
 });
@@ -461,517 +447,8 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&user&&!pending&&!$('main').hidden)loadSheets(true);
 });
 window.addEventListener('beforeunload',e=>{if(pending){flush();e.preventDefault();}});
- 
+
 init();
 </script>
- 
 </body>
 </html>
- 
-Chat
-
-New Chat
-Hi,
-👋
-How can I help you today?
-
-
-Explain a complex thing
-Explain Artificial Intelligence so that I can explain it to my six-year-old child.
-
-Get suggestions and create new ideas
-Please give me the best 10 travel ideas around the world
-
-Translate, summarize, fix grammar and more…
-Translate "I love you" French
-Your usage limit has been reached. Please upgrade your plan to continue using. Upgrade
-
-AITOPIA
-
-
-
-
-
-
-
-
-
-Index · HTML
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#25368A">
-<title>Anote su tensión</title>
-<script>
-  /* ====== CONFIGURACIÓN: pegue aquí el "firebaseConfig" de su proyecto ====== */
-  window.FIREBASE_CONFIG = {
-    apiKey: "AIzaSyAgy25f_D5ia6I4izNSyTQMVvqQqDv7CmQ",
-    authDomain: "tension-tracker-1267b.firebaseapp.com",
-    projectId: "tension-tracker-1267b",
-    appId: "1:912155916325:web:ba370ea32b2a113d40e7cc"
-  };
-  window.PACIENTE = "Maximiliano Murillo";   // Nombre que aparece en las hojas nuevas
-  /* ========================================================================== */
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<style>
-  :root{--paper:#FBFCFE;--navy:#25368A;--ink:#1F4FBF;--rule:#C9CED8;--text:#1C2233;--muted:#5E6679;--soft:#EEF1F8;--warn:#9B2C2C}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--paper);color:var(--text);font-family:"Avenir Next","Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.4}
-  button,input,select{font:inherit;color:inherit}
-  :focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-  [hidden]{display:none!important}
-  .app{max-width:560px;margin:0 auto;padding:16px 16px 40px}
-  .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-  h1{font-size:26px;margin:0;color:var(--navy);letter-spacing:-.01em}
-  h2{font-size:17px;margin:0 0 8px;color:var(--navy)}
-  .saved{font-size:13px;color:var(--muted);text-align:right}
-  .who{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);margin-top:4px}
-  .link{background:none;border:0;color:var(--ink);text-decoration:underline;cursor:pointer;padding:4px 0}
-  .field{display:block;margin-top:14px}
-  .field span{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
-  .field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;background:#fff}
-  .row{display:flex;gap:8px;align-items:flex-end}
-  .row .field{flex:1}
-  .note{background:var(--soft);border-left:4px solid var(--navy);padding:10px 12px;margin-top:14px;font-size:14px}
-  .banner{background:var(--navy);color:#fff;text-align:center;font-weight:700;padding:8px;margin:18px 0 0;font-size:17px}
-  .days{display:flex;gap:6px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}
-  .days button{flex:0 0 auto;min-width:56px;border:1px solid var(--rule);background:#fff;border-radius:8px;padding:6px 8px;text-align:center;cursor:pointer}
-  .days button small{display:block;font-size:12px;color:var(--muted)}
-  .days button b{font-size:18px}
-  .days button.on{background:var(--navy);border-color:var(--navy);color:#fff}
-  .days button.on small{color:#cfd6f3}
-  .days .dot{display:block;width:6px;height:6px;border-radius:50%;margin:3px auto 0}
-  .days .dot.f{background:var(--ink)} .days button.on .dot.f{background:#fff}
-  .fecha{margin:12px 0 4px;font-size:15px;color:var(--muted)}
-  .fecha b{color:var(--ink);font-size:20px;font-weight:600;margin-left:6px}
-  .grid{width:100%;border-collapse:collapse;margin-top:10px;background:#fff}
-  .grid th,.grid td{border:1px solid var(--rule);padding:0}
-  .grid th{font-weight:500;font-size:14px;padding:6px;background:var(--soft)}
-  .grid th.part{background:#fff;font-size:15px;color:var(--navy);font-weight:700;text-align:left;padding:8px}
-  .grid td.lbl{padding:0 10px;font-size:15px;white-space:nowrap;width:30%}
-  .grid input{width:100%;border:0;background:transparent;text-align:center;padding:12px 4px;font-size:24px;color:var(--ink);font-variant-numeric:tabular-nums;font-weight:500}
-  .grid input::placeholder{color:#c3c9d6;font-size:18px}
-  .grid input:disabled{color:var(--ink);-webkit-text-fill-color:var(--ink);opacity:1}
-  .summary{margin-top:20px;border-top:2px solid var(--navy);padding-top:12px}
-  .avg{display:flex;gap:18px;flex-wrap:wrap}
-  .avg div{font-size:14px;color:var(--muted)}
-  .avg b{display:block;font-size:24px;color:var(--text);font-variant-numeric:tabular-nums}
-  .ref{font-size:13px;color:var(--muted);margin:10px 0 0}
-  .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
-  .btn{border:0;border-radius:8px;padding:13px;font-weight:600;cursor:pointer;background:var(--navy);color:#fff}
-  .btn:disabled{opacity:.5;cursor:default}
-  .btn.alt{background:#fff;color:var(--navy);border:1.5px solid var(--navy)}
-  .btn.ghost{background:transparent;color:var(--warn);border:1px solid #E3C3C3;font-weight:500}
-  .btn.full{grid-column:1/-1}
-  .msg{font-size:13px;color:var(--muted);margin-top:8px;min-height:1em}
-  .msg.err{color:var(--warn)}
-  .share{margin-top:28px;border-top:2px solid var(--navy);padding-top:12px}
-  .share p{font-size:14px;color:var(--muted);margin:0 0 8px}
-  .shl{list-style:none;padding:0;margin:0}
-  .shl li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--rule);font-size:15px}
-  .shl li span{flex:1;overflow-wrap:anywhere}
-  .shl label{font-size:13px;color:var(--muted);display:flex;gap:4px;align-items:center}
-  .chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:15px}
-  .chk input{width:20px;height:20px}
-  .login{max-width:380px;margin:12vh auto 0}
-  .login .btn{width:100%;margin-top:18px}
-  .prevwrap{margin-top:26px}
-  .preview{border:1px solid var(--rule);background:#fff;padding:10px;box-shadow:0 2px 10px rgba(37,54,138,.08)}
-  .sheet{font-family:Calibri,"Segoe UI",Helvetica,Arial,sans-serif;color:#333;font-size:9px}
-  .sh-title{font-weight:700;color:#8B1E2D;font-size:1.35em}
-  .sh-sub{color:#555;font-size:1.1em;margin-top:2px}
-  .sh-note{color:var(--ink);font-size:1.4em;margin:6px 0 4px 12%}
-  .sh-banner{background:#2B3D8F;color:#fff;font-weight:700;text-align:center;padding:.35em;font-size:1.3em;margin-bottom:.8em}
-  .blk{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:.9em}
-  .blk td{border:1px solid #888;height:1.9em;padding:0 .4em;white-space:nowrap;overflow:hidden}
-  .blk .c{text-align:center}
-  .blk .v{text-align:center;color:var(--ink);font-size:1.35em}
-  .blk .hw{color:var(--ink);font-size:1.4em;margin-left:.4em}
-  @media print{
-    @page{size:A4;margin:12mm}
-    body{background:#fff}
-    #login,#setup{display:none!important}
-    #main>*:not(.prevwrap){display:none!important}
-    .prevwrap h2{display:none}
-    .preview{border:0;box-shadow:none;padding:0}
-    .app{max-width:none;padding:0}
-    .sheet{font-size:10.5pt}
-    .blk td{height:1.75em}
-    .sh-banner,.blk .v{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  }
-</style>
-</head>
-<body>
-<div class="app">
- 
-  <!-- Aviso si falta configurar -->
-  <div id="setup" hidden>
-    <h1>Anote su tensión</h1>
-    <div class="note">Falta conectar la base de datos. Abra <b>index.html</b> y pegue el bloque <b>firebaseConfig</b> de su proyecto en las líneas de configuración del principio.</div>
-  </div>
- 
-  <!-- Entrada -->
-  <div id="login" class="login" hidden>
-    <h1>Anote su tensión</h1>
-    <label class="field"><span>Correo electrónico</span><input id="email" type="email" autocomplete="username"></label>
-    <label class="field"><span>Contraseña</span><input id="pass" type="password" autocomplete="current-password"></label>
-    <button class="btn" id="loginBtn">Entrar</button>
-    <div class="msg" id="loginMsg"></div>
-  </div>
- 
-  <!-- Aplicación -->
-  <div id="main" hidden>
-    <div class="top">
-      <h1>Anote su tensión</h1>
-      <span class="saved" id="saved"></span>
-    </div>
-    <div class="who"><span id="me"></span><button class="link" id="logout">Salir</button></div>
- 
-    <div class="row">
-      <label class="field"><span>Tomas de</span><select id="ownerSel"></select></label>
-      <button class="btn alt" id="refresh" style="margin-bottom:1px" title="Traer los últimos datos">Actualizar</button>
-    </div>
-    <div class="note" id="roNote" hidden>Solo puede ver estas tomas. Para anotar, la persona debe darle permiso.</div>
- 
-    <div id="empty" class="note" hidden>Todavía no hay ninguna semana anotada.</div>
- 
-    <div id="sheetUI">
-      <label class="field"><span>Nombre del paciente</span><input id="patient" type="text" placeholder="Maximiliano Murillo"></label>
-      <label class="field"><span>Semana</span><select id="sheetSel"></select></label>
-    </div>
-    <div class="row" id="newRow">
-      <label class="field"><span>Empezar una semana nueva el día</span><input id="newDate" type="date"></label>
-      <button class="btn" id="newBtn" style="margin-bottom:1px">Añadir</button>
-    </div>
- 
-    <div id="dayUI">
-      <div class="banner">Anote su tensión</div>
-      <div class="days" id="days"></div>
-      <div class="fecha">Fecha:<b id="fechaTxt"></b></div>
-      <table class="grid" id="grid"></table>
- 
-      <div class="summary">
-        <h2>Media de esta semana</h2>
-        <div class="avg" id="avg"></div>
-        <p class="ref">Referencia habitual para tomas en casa: por debajo de 135/85. Comente siempre sus cifras con su médico.</p>
-      </div>
- 
-      <div class="actions">
-        <button class="btn" id="printBtn">Imprimir hoja</button>
-        <button class="btn alt" id="pdfBtn">Descargar PDF</button>
-        <button class="btn ghost full" id="delBtn">Borrar esta semana</button>
-      </div>
-    </div>
-    <div class="msg" id="msg"></div>
- 
-    <div class="share" id="shareUI">
-      <h2>Compartir mis tomas</h2>
-      <p>Las personas de esta lista pueden ver sus tomas al entrar con su correo. Deben tener una cuenta en la app.</p>
-      <ul class="shl" id="shareList"></ul>
-      <label class="field"><span>Correo de la persona</span><input id="shareEmail" type="email" placeholder="nombre@correo.com"></label>
-      <label class="chk"><input type="checkbox" id="shareEdit"> También puede anotar tomas</label>
-      <div class="actions"><button class="btn full" id="shareBtn">Compartir</button></div>
-    </div>
- 
-    <div class="prevwrap" id="prevUI">
-      <h2>Así se imprimirá</h2>
-      <div class="preview"><div class="sheet" id="sheet"></div></div>
-    </div>
-  </div>
-</div>
- 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { getFirestore, collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
- 
-const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-const PACIENTE=window.PACIENTE||'';
-const $=id=>document.getElementById(id);
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function parse(iso){const [y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);}
-function toIso(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
-function addDays(iso,n){const d=parse(iso);d.setDate(d.getDate()+n);return toIso(d);}
-function fmt(iso){const d=parse(iso);return d.getDate()+' '+MESES[d.getMonth()];}
-function blank(){return [['',''],['',''],['','']];}
-function emptyDays(start){const a=[];for(let i=0;i<7;i++)a.push({date:addDays(start,i),m:blank(),t:blank()});return a;}
-// Firestore no admite listas dentro de listas: se guardan como {s,d}
-const toFs=days=>days.map(d=>({date:d.date,m:d.m.map(p=>({s:p[0],d:p[1]})),t:d.t.map(p=>({s:p[0],d:p[1]}))}));
-const fromFs=days=>days.map(d=>({date:d.date,m:d.m.map(p=>[p.s||'',p.d||'']),t:d.t.map(p=>[p.s||'',p.d||''])}));
- 
-let auth=null, db=null, user=null, myEmail='';
-let owners=[], myShares=[], ownerId=null, sheets=[], sheetId=null, day=0;
-let saveT=null, pending=false;
- 
-const owner=()=>owners.find(o=>o.id===ownerId);
-const sheet=()=>sheets.find(s=>s.id===sheetId);
-const canEdit=()=>{const o=owner();return !!o&&(o.mine||o.canEdit);};
-const sheetsCol=id=>collection(db,'users',id,'sheets');
-function status(t){$('saved').textContent=t;}
-function say(t,err){const m=$('msg');m.textContent=t||'';m.className='msg'+(err?' err':'');}
-function errText(e){
-  const c=e?.code||'';
-  if(c.includes('permission-denied'))return 'No tiene permiso para esta acción.';
-  if(c.includes('unavailable'))return 'Sin conexión. Inténtelo de nuevo.';
-  return e?.message||'Error desconocido.';
-}
- 
-/* ---------- Arranque y sesión ---------- */
-function init(){
-  const cfg=window.FIREBASE_CONFIG||{};
-  if(!cfg.apiKey||cfg.apiKey.startsWith('PEGUE')){$('setup').hidden=false;return;}
-  const app=initializeApp(cfg);auth=getAuth(app);db=getFirestore(app);
-  onAuthStateChanged(auth,u=>{u?enter(u):showLogin();});
-}
-function showLogin(msg){user=null;$('main').hidden=true;$('login').hidden=false;
-  const m=$('loginMsg');m.textContent=msg||'';m.className='msg'+(msg?' err':'');}
-async function login(){
-  const email=$('email').value.trim(), password=$('pass').value, m=$('loginMsg');
-  if(!email||!password){m.textContent='Escriba su correo y su contraseña.';m.className='msg err';return;}
-  $('loginBtn').disabled=true;m.className='msg';m.textContent='Entrando…';
-  try{await signInWithEmailAndPassword(auth,email,password);m.textContent='';}
-  catch(e){const c=e.code||'';
-    m.textContent=c.includes('invalid')||c.includes('wrong-password')||c.includes('user-not-found')?'Correo o contraseña incorrectos.'
-      :c.includes('too-many')?'Demasiados intentos. Espere unos minutos.':'No se pudo entrar: '+errText(e);
-    m.className='msg err';}
-  $('loginBtn').disabled=false;
-}
-async function enter(u){
-  user=u;myEmail=(u.email||'').toLowerCase();
-  try{
-    const mem=await getDoc(doc(db,'members',u.uid));
-    if(!mem.exists()){await signOut(auth);showLogin('Su cuenta aún no está autorizada. Pida al administrador que la active.');return;}
-  }catch(e){await signOut(auth);showLogin('Su cuenta aún no está autorizada. Pida al administrador que la active.');return;}
-  $('login').hidden=true;$('main').hidden=false;
-  $('me').textContent=u.email;$('newDate').value=toIso(new Date());
-  await loadOwners();await loadSheets();
-}
- 
-/* ---------- Datos ---------- */
-async function loadOwners(){
-  try{
-    const [mine,toMe]=await Promise.all([
-      getDocs(query(collection(db,'shares'),where('owner','==',user.uid))),
-      getDocs(query(collection(db,'shares'),where('viewerEmail','==',myEmail)))
-    ]);
-    myShares=mine.docs.map(d=>d.data()).sort((a,b)=>a.viewerEmail.localeCompare(b.viewerEmail));
-    owners=[{id:user.uid,email:myEmail,name:'Mis tomas',canEdit:true,mine:true}];
-    toMe.docs.map(d=>d.data()).filter(r=>r.owner!==user.uid)
-      .forEach(r=>owners.push({id:r.owner,email:r.ownerEmail,name:r.ownerEmail,canEdit:!!r.canEdit,mine:false}));
-  }catch(e){say('No se pudieron cargar los permisos: '+errText(e),true);
-    owners=[{id:user.uid,email:myEmail,name:'Mis tomas',canEdit:true,mine:true}];}
-  if(!owners.some(o=>o.id===ownerId))ownerId=user.uid;
-  renderOwners();renderShares();
-}
-async function loadSheets(keepSheet){
-  if(pending)await flush();
-  status('Cargando…');
-  try{
-    const snap=await getDocs(sheetsCol(ownerId));
-    sheets=snap.docs.map(d=>{const x=d.data();return {id:d.id,...x,days:fromFs(x.days)};})
-      .sort((a,b)=>b.startDate.localeCompare(a.startDate));
-  }catch(e){status('');say('No se pudieron cargar las tomas: '+errText(e),true);return;}
-  const o=owner();
-  if(!sheets.length&&o.mine){await createSheet(toIso(new Date()));return;}
-  if(!o.mine&&sheets[0]?.patient)o.name=sheets[0].patient+' ('+o.email+')';
-  if(!keepSheet||!sheets.some(s=>s.id===sheetId)){sheetId=sheets[0]?.id||null;day=todayIndex();}
-  status('Al día');renderOwners();renderAll();
-}
-function todayIndex(){const s=sheet();if(!s)return 0;const i=s.days.findIndex(d=>d.date===toIso(new Date()));return i<0?0:i;}
-async function createSheet(start){
-  const o=owner(), prev=sheet()||sheets[0];
-  const row={ownerEmail:o.email,patient:prev?.patient||PACIENTE,note:prev?.note||'Cada 15 días',startDate:start,updatedAt:new Date().toISOString()};
-  const days=emptyDays(start);
-  try{
-    const ref=await addDoc(sheetsCol(o.id),{...row,days:toFs(days)});
-    sheets.push({id:ref.id,...row,days});sheets.sort((a,b)=>b.startDate.localeCompare(a.startDate));
-    sheetId=ref.id;day=todayIndex();status('Guardado');renderAll();
-    say('Semana del '+fmt(start)+' añadida.');
-  }catch(e){say('No se pudo crear la semana: '+errText(e),true);}
-}
-function queueSave(){pending=true;status('Guardando…');clearTimeout(saveT);saveT=setTimeout(flush,700);}
-async function flush(){
-  clearTimeout(saveT);const s=sheet();if(!s||!pending)return;
-  pending=false;
-  try{
-    await updateDoc(doc(db,'users',ownerId,'sheets',s.id),{days:toFs(s.days),patient:s.patient,updatedAt:new Date().toISOString()});
-    status('Guardado');
-  }catch(e){pending=true;status('Sin guardar');say('No se pudo guardar. Revise la conexión y pulse Actualizar.',true);}
-}
- 
-/* ---------- Pintar ---------- */
-function renderOwners(){
-  $('ownerSel').innerHTML=owners.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}${o.mine?'':(o.canEdit?' · puede anotar':' · solo ver')}</option>`).join('');
-  $('ownerSel').value=ownerId;
-  $('ownerSel').parentElement.hidden=owners.length<2;
-}
-function renderShares(){
-  $('shareList').innerHTML=myShares.length?myShares.map(r=>`<li><span>${esc(r.viewerEmail)}</span>
-    <label><input type="checkbox" data-edit="${esc(r.viewerEmail)}" ${r.canEdit?'checked':''}> anotar</label>
-    <button class="link" data-del="${esc(r.viewerEmail)}">Quitar</button></li>`).join('')
-    :'<li><span>Todavía no comparte sus tomas con nadie.</span></li>';
-}
-function renderAll(){
-  const o=owner(), s=sheet(), ed=canEdit();
-  $('roNote').hidden=ed;$('empty').hidden=!!s;
-  $('sheetUI').hidden=!s;$('dayUI').hidden=!s;$('prevUI').hidden=!s;
-  $('newRow').hidden=!ed;$('shareUI').hidden=!o?.mine;$('delBtn').hidden=!o?.mine;
-  if(!s)return;
-  $('patient').value=s.patient||'';$('patient').disabled=!ed;
-  $('sheetSel').innerHTML=sheets.map(x=>`<option value="${esc(x.id)}">Semana del ${fmt(x.startDate)} de ${parse(x.startDate).getFullYear()}</option>`).join('');
-  $('sheetSel').value=s.id;
-  renderDays();renderGrid();renderSummary();renderSheet();
-}
-function hasData(d){return [...d.m,...d.t].some(p=>p[0]||p[1]);}
-function renderDays(){
-  const s=sheet();
-  $('days').innerHTML=s.days.map((d,i)=>{const dt=parse(d.date);
-    return `<button class="${i===day?'on':''}" data-i="${i}" aria-label="${fmt(d.date)}"><small>${DIAS[dt.getDay()]}</small><b>${dt.getDate()}</b><span class="dot ${hasData(d)?'f':''}"></span></button>`;}).join('');
-  $('fechaTxt').textContent=fmt(s.days[day].date);
-}
-function renderGrid(){
-  const d=sheet().days[day], dis=canEdit()?'':'disabled';
-  const part=(k,title)=>`<tr><th class="part" colspan="3">${title}</th></tr><tr><th></th><th>Máxima</th><th>Mínima</th></tr>`+
-    d[k].map((p,i)=>`<tr><td class="lbl">Toma ${i+1}</td>
-      <td><input ${dis} inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="—" aria-label="${title} toma ${i+1} máxima" data-k="${k}" data-i="${i}" data-j="0" value="${esc(p[0])}"></td>
-      <td><input ${dis} inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="—" aria-label="${title} toma ${i+1} mínima" data-k="${k}" data-i="${i}" data-j="1" value="${esc(p[1])}"></td></tr>`).join('');
-  $('grid').innerHTML=part('m','Por la mañana')+part('t','Por la tarde');
-}
-function mean(a){return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;}
-function collect(keys){const S=[],D=[];sheet().days.forEach(d=>keys.forEach(k=>d[k].forEach(p=>{const a=parseInt(p[0]),b=parseInt(p[1]);if(a>0&&b>0){S.push(a);D.push(b);}})));return {s:mean(S),d:mean(D),n:S.length};}
-function renderSummary(){
-  const box=(l,r)=>`<div>${l}<b>${r.n?r.s+'/'+r.d:'—'}</b>${r.n?r.n+' toma'+(r.n>1?'s':''):'sin datos'}</div>`;
-  $('avg').innerHTML=box('Mañana',collect(['m']))+box('Tarde',collect(['t']))+box('Total',collect(['m','t']));
-}
-function renderSheet(){
-  const s=sheet();
-  const rows=d=>[0,1,2].map(i=>`<tr><td>Toma ${i+1}</td><td class="v">${esc(d.m[i][0])}</td><td class="v">${esc(d.m[i][1])}</td><td>Toma ${i+1}</td><td class="v">${esc(d.t[i][0])}</td><td class="v">${esc(d.t[i][1])}</td></tr>`).join('');
-  $('sheet').innerHTML=`<div class="sh-title">Registro de tensión arterial</div><div class="sh-sub">Paciente: ${esc(s.patient)}</div>
-    <div class="sh-note">${esc(s.note)}</div><div class="sh-banner">Anote su tensión</div>`+
-    s.days.map(d=>`<table class="blk"><colgroup><col style="width:15%"><col style="width:19.5%"><col style="width:19.5%"><col style="width:14%"><col style="width:16%"><col style="width:16%"></colgroup>
-      <tr><td colspan="6"><b>Fecha:</b><span class="hw">${fmt(d.date)}</span></td></tr>
-      <tr><td></td><td colspan="2" class="c">Por la mañana</td><td></td><td colspan="2" class="c">Por la tarde</td></tr>
-      <tr><td></td><td class="c">Máxima</td><td class="c">Mínima</td><td></td><td class="c">Máxima</td><td class="c">Mínima</td></tr>${rows(d)}</table>`).join('');
-}
- 
-/* ---------- PDF con el formato de la hoja ---------- */
-function makePdf(){
-  const {jsPDF}=window.jspdf, pdf=new jsPDF({unit:'mm',format:'a4'});
-  const s=sheet(), x0=15, W=180, cols=[27,35,35,25,29,29], hs=[5,4.5,4.5,5,5,5];
-  const cx=i=>x0+cols.slice(0,i).reduce((a,b)=>a+b,0);
-  pdf.setFont('helvetica','bold');pdf.setFontSize(13);pdf.setTextColor(139,30,45);pdf.text('Registro de tensión arterial',x0,16);
-  pdf.setFont('helvetica','normal');pdf.setFontSize(10);pdf.setTextColor(80);pdf.text('Paciente: '+(s.patient||''),x0,22);
-  pdf.setTextColor(31,79,191);pdf.setFontSize(13);pdf.text(s.note||'',x0+22,29);
-  pdf.setFillColor(43,61,143);pdf.rect(x0,32,W,8,'F');
-  pdf.setTextColor(255);pdf.setFont('helvetica','bold');pdf.setFontSize(12);pdf.text('Anote su tensión',x0+W/2,37.6,{align:'center'});
-  pdf.setDrawColor(120);pdf.setLineWidth(.2);
-  let y=44;
-  s.days.forEach(d=>{
-    let yy=y;
-    pdf.rect(x0,yy,W,hs[0]);
-    pdf.setTextColor(50);pdf.setFont('helvetica','bold');pdf.setFontSize(9);pdf.text('Fecha:',x0+2,yy+3.6);
-    pdf.setFont('helvetica','normal');pdf.setTextColor(31,79,191);pdf.setFontSize(11);pdf.text(fmt(d.date),x0+15,yy+3.8);
-    yy+=hs[0];pdf.setTextColor(60);pdf.setFontSize(9);
-    pdf.rect(cx(0),yy,cols[0],hs[1]);pdf.rect(cx(1),yy,cols[1]+cols[2],hs[1]);pdf.rect(cx(3),yy,cols[3],hs[1]);pdf.rect(cx(4),yy,cols[4]+cols[5],hs[1]);
-    pdf.text('Por la mañana',cx(1)+(cols[1]+cols[2])/2,yy+3.3,{align:'center'});pdf.text('Por la tarde',cx(4)+(cols[4]+cols[5])/2,yy+3.3,{align:'center'});
-    yy+=hs[1];
-    ['','Máxima','Mínima','','Máxima','Mínima'].forEach((t,i)=>{pdf.rect(cx(i),yy,cols[i],hs[2]);if(t)pdf.text(t,cx(i)+cols[i]/2,yy+3.3,{align:'center'});});
-    yy+=hs[2];
-    for(let r=0;r<3;r++){
-      const h=hs[3+r], vals=['Toma '+(r+1),d.m[r][0],d.m[r][1],'Toma '+(r+1),d.t[r][0],d.t[r][1]];
-      vals.forEach((t,i)=>{pdf.rect(cx(i),yy,cols[i],h);
-        if(i===0||i===3){pdf.setTextColor(60);pdf.setFontSize(9);pdf.text(t,cx(i)+2,yy+3.6);}
-        else if(t){pdf.setTextColor(31,79,191);pdf.setFontSize(12);pdf.text(String(t),cx(i)+cols[i]/2,yy+3.9,{align:'center'});}});
-      yy+=h;
-    }
-    y=yy+3;
-  });
-  return pdf;
-}
- 
-/* ---------- Eventos ---------- */
-$('loginBtn').addEventListener('click',login);
-$('pass').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
-$('logout').addEventListener('click',async()=>{if(pending)await flush();await signOut(auth);});
-$('ownerSel').addEventListener('change',async e=>{ownerId=e.target.value;sheetId=null;say('');await loadSheets();});
-$('refresh').addEventListener('click',async()=>{say('');await loadOwners();await loadSheets(true);});
-$('sheetSel').addEventListener('change',async e=>{if(pending)await flush();sheetId=e.target.value;day=todayIndex();renderAll();});
-$('days').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;day=+b.dataset.i;renderDays();renderGrid();});
-$('grid').addEventListener('input',e=>{
-  const t=e.target;if(t.tagName!=='INPUT'||!canEdit())return;
-  t.value=t.value.replace(/\D/g,'').slice(0,3);
-  sheet().days[day][t.dataset.k][+t.dataset.i][+t.dataset.j]=t.value;
-  queueSave();renderSummary();renderSheet();
-  const dot=$('days').querySelectorAll('.dot')[day];if(dot)dot.classList.toggle('f',hasData(sheet().days[day]));
-});
-$('patient').addEventListener('input',e=>{if(!canEdit())return;sheet().patient=e.target.value;queueSave();renderSheet();});
-$('newBtn').addEventListener('click',async()=>{
-  const v=$('newDate').value;if(!v){say('Elija el día en que empieza la semana.',true);return;}
-  if(sheets.some(s=>s.startDate===v)){say('Ya existe una semana que empieza ese día.',true);return;}
-  if(pending)await flush();await createSheet(v);
-});
-$('delBtn').addEventListener('click',async()=>{
-  const s=sheet();if(!s||!confirm('¿Borrar la semana del '+fmt(s.startDate)+'? No se puede deshacer.'))return;
-  pending=false;clearTimeout(saveT);
-  try{await deleteDoc(doc(db,'users',ownerId,'sheets',s.id));}
-  catch(e){say('No se pudo borrar: '+errText(e),true);return;}
-  sheets=sheets.filter(x=>x.id!==s.id);sheetId=sheets[0]?.id||null;day=todayIndex();renderAll();say('Semana borrada.');
-});
-$('shareBtn').addEventListener('click',async()=>{
-  const email=$('shareEmail').value.trim().toLowerCase(), canEdit=$('shareEdit').checked;
-  if(!/^[^\s@\/]+@[^\s@\/]+\.[^\s@\/]+$/.test(email)){say('Escriba un correo válido.',true);return;}
-  if(email===myEmail){say('Ese es su propio correo.',true);return;}
-  if(myShares.some(r=>r.viewerEmail===email)){say('Ya comparte sus tomas con ese correo.',true);return;}
-  try{await setDoc(doc(db,'shares',user.uid+'_'+email),{owner:user.uid,ownerEmail:myEmail,viewerEmail:email,canEdit});}
-  catch(e){say('No se pudo compartir: '+errText(e),true);return;}
-  $('shareEmail').value='';$('shareEdit').checked=false;say('Compartido con '+email+'.');await loadOwners();
-});
-$('shareList').addEventListener('click',async e=>{
-  const em=e.target.dataset.del;if(!em)return;
-  if(!confirm('¿Dejar de compartir con '+em+'?'))return;
-  try{await deleteDoc(doc(db,'shares',user.uid+'_'+em));}
-  catch(err){say('No se pudo quitar: '+errText(err),true);return;}
-  say('Ya no comparte sus tomas con '+em+'.');await loadOwners();
-});
-$('shareList').addEventListener('change',async e=>{
-  const em=e.target.dataset.edit;if(!em)return;
-  try{await updateDoc(doc(db,'shares',user.uid+'_'+em),{canEdit:e.target.checked});}
-  catch(err){say('No se pudo cambiar el permiso: '+errText(err),true);e.target.checked=!e.target.checked;return;}
-  say(e.target.checked?em+' ya puede anotar.':em+' ahora solo puede ver.');await loadOwners();
-});
-$('printBtn').addEventListener('click',async()=>{if(pending)await flush();window.print();});
-$('pdfBtn').addEventListener('click',async()=>{
-  if(!window.jspdf){say('No se pudo cargar el generador de PDF. Compruebe la conexión.',true);return;}
-  if(pending)await flush();
-  const pdf=makePdf(), name='tension_'+sheet().startDate+'.pdf';
-  try{pdf.save(name);say('PDF descargado: '+name);}catch(err){window.open(pdf.output('bloburl'),'_blank');}
-});
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='hidden'&&pending)flush();
-  if(document.visibilityState==='visible'&&user&&!pending&&!$('main').hidden)loadSheets(true);
-});
-window.addEventListener('beforeunload',e=>{if(pending){flush();e.preventDefault();}});
- 
-init();
-</script>
- 
-</body>
-</html>
- 
-
-
-Group Chat
-Web Access
-
-10
-Upgrade
-
-
-
-
