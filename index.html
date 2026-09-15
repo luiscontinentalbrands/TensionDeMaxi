@@ -131,12 +131,8 @@
       <h1>Anote su tensión</h1>
       <span class="saved" id="saved"></span>
     </div>
-    <div class="who"><span id="me"></span><button class="link" id="logout">Salir</button></div>
+    <div class="who"><span id="me"></span><span><button class="link" id="refresh">Actualizar</button> &nbsp; <button class="link" id="logout">Salir</button></span></div>
 
-    <div class="row">
-      <label class="field"><span>Tomas de</span><select id="ownerSel"></select></label>
-      <button class="btn alt" id="refresh" style="margin-bottom:1px" title="Traer los últimos datos">Actualizar</button>
-    </div>
     <div class="note" id="roNote" hidden>Solo puede ver estas tomas. Para anotar, la persona debe darle permiso.</div>
 
     <div id="empty" class="note" hidden>Todavía no hay ninguna semana anotada.</div>
@@ -144,10 +140,6 @@
     <div id="sheetUI">
       <label class="field"><span>Nombre del paciente</span><input id="patient" type="text" placeholder="Maximiliano Murillo"></label>
       <label class="field"><span>Semana</span><select id="sheetSel"></select></label>
-    </div>
-    <div class="row" id="newRow">
-      <label class="field"><span>Empezar una semana nueva el día</span><input id="newDate" type="date"></label>
-      <button class="btn" id="newBtn" style="margin-bottom:1px">Añadir</button>
     </div>
 
     <div id="dayUI">
@@ -201,6 +193,10 @@ function toIso(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(
 function addDays(iso,n){const d=parse(iso);d.setDate(d.getDate()+n);return toIso(d);}
 function fmt(iso){const d=parse(iso);return d.getDate()+' '+MESES[d.getMonth()];}
 function blank(){return [['',''],['',''],['','']];}
+// La semana siempre empieza en domingo.
+function weekStart(d){const x=d?new Date(d):new Date();x.setHours(12,0,0,0);x.setDate(x.getDate()-x.getDay());return toIso(x);}
+function dmy(iso){const d=parse(iso);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
+function label(start){return 'Del '+dmy(start)+' hasta el '+dmy(addDays(start,6));}
 function emptyDays(start){const a=[];for(let i=0;i<7;i++)a.push({date:addDays(start,i),m:blank(),t:blank()});return a;}
 // Firestore no admite listas dentro de listas: se guardan como {s,d}
 const toFs=days=>days.map(d=>({date:d.date,m:d.m.map(p=>({s:p[0],d:p[1]})),t:d.t.map(p=>({s:p[0],d:p[1]}))}));
@@ -269,7 +265,6 @@ async function enter(u){
     showLogin('Su cuenta aún no está autorizada. Pida al administrador que la active.');return;
   }
   $('login').hidden=true;$('main').hidden=false;
-  $('me').textContent=u.email;$('newDate').value=toIso(new Date());
   await loadOwners();watchSheets();
 }
 
@@ -286,7 +281,12 @@ async function loadOwners(){
       .forEach(r=>owners.push({id:r.owner,email:r.ownerEmail,name:r.ownerEmail,canEdit:!!r.canEdit,mine:false}));
   }catch(e){say('No se pudieron cargar los permisos: '+errText(e),true);
     owners=[{id:user.uid,email:myEmail,name:'Mis tomas',canEdit:true,mine:true}];}
-  if(!owners.some(o=>o.id===ownerId))ownerId=user.uid;
+  // Con una sola persona no hace falta elegir: si alguien comparte sus tomas
+  // conmigo, trabajo sobre esas; si no, sobre las mías.
+  if(!owners.some(o=>o.id===ownerId)){
+    const shared=owners.find(o=>!o.mine);
+    ownerId=shared?shared.id:user.uid;
+  }
   renderOwners();renderShares();
 }
 // Escucha en directo: cualquier cambio de otra persona llega solo.
@@ -298,8 +298,8 @@ function watchSheets(){
       .sort((a,b)=>b.startDate.localeCompare(a.startDate));
     const o=owner();
     if(firstSnap){
-      firstSnap=false;
-      if(!list.length&&o&&o.mine){sheets=list;await createSheet(toIso(new Date()));return;}
+      firstSnap=false;sheets=list;
+      if(await ensureThisWeek())return;
     }
     if(o&&!o.mine&&list[0]?.patient){o.name=list[0].patient+' ('+o.email+')';renderOwners();}
     // Si hay cambios propios sin guardar, no pisar lo que se está escribiendo.
@@ -321,16 +321,24 @@ function mergeKeepingMine(list){
   return list.map(x=>x.id===sheetId?(sheets.find(s=>s.id===sheetId)||x):x);
 }
 function todayIndex(){const s=sheet();if(!s)return 0;const i=s.days.findIndex(d=>d.date===toIso(new Date()));return i<0?0:i;}
+// El identificador del documento es la fecha de inicio, así dos móviles
+// nunca crean dos hojas para la misma semana.
 async function createSheet(start){
-  const o=owner(), prev=sheet()||sheets[0];
-  const row={ownerEmail:o.email,patient:prev?.patient||PACIENTE,note:prev?.note||'Cada 15 días',startDate:start,updatedAt:new Date().toISOString()};
+  const o=owner(), prev=sheets[0];
+  const row={ownerEmail:o.email,patient:prev?.patient||PACIENTE,note:prev?.note||'',startDate:start,updatedAt:new Date().toISOString()};
   const days=emptyDays(start);
   try{
-    const ref=await addDoc(sheetsCol(o.id),{...row,days:toFs(days)});
-    sheets.push({id:ref.id,...row,days});sheets.sort((a,b)=>b.startDate.localeCompare(a.startDate));
-    sheetId=ref.id;day=todayIndex();status('Guardado');renderAll();
-    say('Semana del '+fmt(start)+' añadida.');
+    await setDoc(doc(sheetsCol(o.id),start),{...row,days:toFs(days)});
+    if(!sheets.some(s=>s.id===start)){sheets.push({id:start,...row,days});sheets.sort((a,b)=>b.startDate.localeCompare(a.startDate));}
+    sheetId=start;day=todayIndex();status('Guardado');renderAll();
   }catch(e){say('No se pudo crear la semana: '+errText(e),true);}
+}
+// Comprueba si falta la hoja de la semana en curso y la crea.
+async function ensureThisWeek(){
+  const o=owner();if(!o||!canEdit())return false;
+  const start=weekStart();
+  if(sheets.some(s=>s.startDate===start))return false;
+  await createSheet(start);return true;
 }
 function queueSave(){pending=true;status('Guardando…');clearTimeout(saveT);saveT=setTimeout(flush,700);}
 async function flush(){
@@ -344,9 +352,8 @@ async function flush(){
 
 /* ---------- Pintar ---------- */
 function renderOwners(){
-  $('ownerSel').innerHTML=owners.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}${o.mine?'':(o.canEdit?' · puede anotar':' · solo ver')}</option>`).join('');
-  $('ownerSel').value=ownerId;
-  $('ownerSel').parentElement.hidden=owners.length<2;
+  const o=owner();
+  $('me').textContent=(user?user.email:'')+(o&&!o.mine?'  ·  tomas de '+o.email:'');
 }
 function renderShares(){
   $('shareList').innerHTML=myShares.length?myShares.map(r=>`<li><span>${esc(r.viewerEmail)}</span>
@@ -358,10 +365,10 @@ function renderAll(){
   const o=owner(), s=sheet(), ed=canEdit();
   $('roNote').hidden=ed;$('empty').hidden=!!s;
   $('sheetUI').hidden=!s;$('dayUI').hidden=!s;$('prevUI').hidden=!s;
-  $('newRow').hidden=!ed;$('shareUI').hidden=!o?.mine;$('delBtn').hidden=!o?.mine;
+  $('shareUI').hidden=!o?.mine;$('delBtn').hidden=!o?.mine;
   if(!s)return;
   $('patient').value=s.patient||'';$('patient').disabled=!ed;
-  $('sheetSel').innerHTML=sheets.map(x=>`<option value="${esc(x.id)}">Semana del ${fmt(x.startDate)} de ${parse(x.startDate).getFullYear()}</option>`).join('');
+  $('sheetSel').innerHTML=sheets.map(x=>`<option value="${esc(x.id)}">${esc(label(x.startDate))}</option>`).join('');
   $('sheetSel').value=s.id;
   renderDays();renderGrid();renderSummary();renderSheet();
 }
@@ -390,7 +397,7 @@ function renderSheet(){
   const s=sheet();
   const rows=d=>[0,1,2].map(i=>`<tr><td>Toma ${i+1}</td><td class="v">${esc(d.m[i][0])}</td><td class="v">${esc(d.m[i][1])}</td><td>Toma ${i+1}</td><td class="v">${esc(d.t[i][0])}</td><td class="v">${esc(d.t[i][1])}</td></tr>`).join('');
   $('sheet').innerHTML=`<div class="sh-title">Registro de tensión arterial</div><div class="sh-sub">Paciente: ${esc(s.patient)}</div>
-    <div class="sh-note">${esc(s.note)}</div><div class="sh-banner">Anote su tensión</div>`+
+    <div class="sh-sub">${esc(label(s.startDate))}</div><div class="sh-banner">Anote su tensión</div>`+
     s.days.map(d=>`<table class="blk"><colgroup><col style="width:15%"><col style="width:19.5%"><col style="width:19.5%"><col style="width:14%"><col style="width:16%"><col style="width:16%"></colgroup>
       <tr><td colspan="6"><b>Fecha:</b><span class="hw">${fmt(d.date)}</span></td></tr>
       <tr><td></td><td colspan="2" class="c">Por la mañana</td><td></td><td colspan="2" class="c">Por la tarde</td></tr>
@@ -404,9 +411,9 @@ function makePdf(){
   const cx=i=>x0+cols.slice(0,i).reduce((a,b)=>a+b,0);
   pdf.setFont('helvetica','bold');pdf.setFontSize(13);pdf.setTextColor(139,30,45);pdf.text('Registro de tensión arterial',x0,16);
   pdf.setFont('helvetica','normal');pdf.setFontSize(10);pdf.setTextColor(80);pdf.text('Paciente: '+(s.patient||''),x0,22);
-  pdf.setTextColor(31,79,191);pdf.setFontSize(13);pdf.text(s.note||'',x0+22,29);
-  pdf.setFillColor(43,61,143);pdf.rect(x0,32,W,8,'F');
-  pdf.setTextColor(255);pdf.setFont('helvetica','bold');pdf.setFontSize(12);pdf.text('Anote su tensión',x0+W/2,37.6,{align:'center'});
+  pdf.setTextColor(80);pdf.setFontSize(10);pdf.text(label(s.startDate),x0,27);
+  pdf.setFillColor(43,61,143);pdf.rect(x0,31,W,8,'F');
+  pdf.setTextColor(255);pdf.setFont('helvetica','bold');pdf.setFontSize(12);pdf.text('Anote su tensión',x0+W/2,36.6,{align:'center'});
   pdf.setDrawColor(120);pdf.setLineWidth(.2);
   let y=44;
   s.days.forEach(d=>{
@@ -436,7 +443,6 @@ function makePdf(){
 $('loginBtn').addEventListener('click',login);
 $('pass').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 $('logout').addEventListener('click',async()=>{if(pending)await flush();stopWatching();await signOut(auth);});
-$('ownerSel').addEventListener('change',async e=>{if(pending)await flush();ownerId=e.target.value;sheetId=null;say('');watchSheets();});
 $('refresh').addEventListener('click',async()=>{say('');if(pending)await flush();await loadOwners();watchSheets();});
 $('sheetSel').addEventListener('change',async e=>{if(pending)await flush();sheetId=e.target.value;day=todayIndex();renderAll();});
 $('days').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;day=+b.dataset.i;renderDays();renderGrid();});
@@ -448,13 +454,8 @@ $('grid').addEventListener('input',e=>{
   const dot=$('days').querySelectorAll('.dot')[day];if(dot)dot.classList.toggle('f',hasData(sheet().days[day]));
 });
 $('patient').addEventListener('input',e=>{if(!canEdit())return;sheet().patient=e.target.value;queueSave();renderSheet();});
-$('newBtn').addEventListener('click',async()=>{
-  const v=$('newDate').value;if(!v){say('Elija el día en que empieza la semana.',true);return;}
-  if(sheets.some(s=>s.startDate===v)){say('Ya existe una semana que empieza ese día.',true);return;}
-  if(pending)await flush();await createSheet(v);
-});
 $('delBtn').addEventListener('click',async()=>{
-  const s=sheet();if(!s||!confirm('¿Borrar la semana del '+fmt(s.startDate)+'? No se puede deshacer.'))return;
+  const s=sheet();if(!s||!confirm('¿Borrar la hoja «'+label(s.startDate)+'»? No se puede deshacer.'))return;
   pending=false;clearTimeout(saveT);
   try{await deleteDoc(doc(db,'users',ownerId,'sheets',s.id));}
   catch(e){say('No se pudo borrar: '+errText(e),true);return;}
@@ -486,12 +487,16 @@ $('printBtn').addEventListener('click',async()=>{if(pending)await flush();window
 $('pdfBtn').addEventListener('click',async()=>{
   if(!window.jspdf){say('No se pudo cargar el generador de PDF. Compruebe la conexión.',true);return;}
   if(pending)await flush();
-  const pdf=makePdf(), name='tension_'+sheet().startDate+'.pdf';
+  const pdf=makePdf(), name='tension_semana_'+sheet().startDate+'.pdf';
   try{pdf.save(name);say('PDF descargado: '+name);}catch(err){window.open(pdf.output('bloburl'),'_blank');}
 });
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'&&pending)flush();
+  // Al volver a abrir la app puede haber empezado una semana nueva.
+  if(document.visibilityState==='visible'&&user&&!pending)ensureThisWeek();
 });
+// Y si el móvil se queda abierto, comprobarlo cada media hora.
+setInterval(()=>{if(user&&!pending&&!document.hidden)ensureThisWeek();},1800000);
 window.addEventListener('beforeunload',e=>{if(pending){flush();e.preventDefault();}});
 
 init();
