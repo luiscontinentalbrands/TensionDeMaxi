@@ -239,10 +239,19 @@ async function login(){
 }
 async function enter(u){
   user=u;myEmail=(u.email||'').toLowerCase();
-  // Solo entran los correos que el administrador haya dado de alta en "members".
+  // Solo entran los familiares que el administrador haya dado de alta en
+  // "members". Se admiten las altas antiguas (documento con el identificador
+  // de la cuenta) y las nuevas (documento con el correo), para no tener que
+  // volver a dar de alta a nadie.
   let mem=null, lastErr=null;
   for(let i=0;i<3;i++){
-    try{mem=await getDoc(doc(db,'members',myEmail));lastErr=null;break;}
+    try{
+      const [porCorreo,porCuenta]=await Promise.all([
+        getDoc(doc(db,'members',myEmail)),
+        getDoc(doc(db,'members',u.uid))
+      ]);
+      mem=porCorreo.exists()?porCorreo:porCuenta;lastErr=null;break;
+    }
     catch(e){lastErr=e;if(i<2)await new Promise(r=>setTimeout(r,700*(i+1)));}
   }
   if(lastErr&&!(lastErr.code||'').includes('permission-denied')){

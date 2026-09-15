@@ -2,20 +2,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Un familiar autorizado es un correo dado de alta a mano en la colección
-    // "members" desde la consola de Firebase. Nadie más lee ni escribe nada.
+    // Un familiar autorizado es alguien dado de alta a mano en la colección
+    // "members" desde la consola de Firebase. Valen las dos formas de alta:
+    // el documento puede llamarse como el correo (recomendado, se puede dar de
+    // alta antes de que la persona entre por primera vez) o como el
+    // identificador de la cuenta, que es como se hacía antes.
     function member() {
-      return request.auth != null
-        && request.auth.token.email != null
-        && exists(/databases/$(database)/documents/members/$(request.auth.token.email.lower()));
+      return request.auth != null && (
+        exists(/databases/$(database)/documents/members/$(request.auth.uid))
+        || (request.auth.token.email != null
+            && exists(/databases/$(database)/documents/members/$(request.auth.token.email.lower())))
+      );
     }
 
-    // Cada familiar solo puede comprobar su propia alta; la lista no se puede leer
-    // entera, y solo se modifica desde la consola de Firebase.
-    match /members/{email} {
+    // Cada familiar solo puede comprobar su propia alta; la lista no se puede
+    // leer entera, y solo se modifica desde la consola de Firebase.
+    match /members/{id} {
       allow get: if request.auth != null
-                 && request.auth.token.email != null
-                 && request.auth.token.email.lower() == email;
+                 && (id == request.auth.uid
+                     || (request.auth.token.email != null
+                         && id == request.auth.token.email.lower()));
       allow list, write: if false;
     }
 

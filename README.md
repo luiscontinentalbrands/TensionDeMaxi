@@ -26,9 +26,13 @@ al abrir la app, al volver a ella y cada media hora.
 
 1. Consola de Firebase → **Authentication** → *Add user*: correo y contraseña.
 2. Consola de Firebase → **Firestore** → colección `members` → *Add document*,
-   con el **correo en minúsculas como identificador** del documento. El contenido
-   da igual; basta con que el documento exista.
+   con el **correo en minúsculas como identificador** del documento. Hace falta
+   algún campo (por ejemplo `nombre`), porque Firestore no guarda documentos
+   vacíos; su contenido no se usa para nada.
 3. Entregar el correo y la contraseña a esa persona.
+
+Las altas antiguas, cuyo documento se llamaba como el identificador de la cuenta
+en vez de como el correo, siguen valiendo: no hay que volver a darlas de alta.
 
 Para retirar el acceso basta con borrar su documento de `members`.
 
