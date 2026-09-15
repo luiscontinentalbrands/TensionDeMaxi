@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Un familiar autorizado es un correo dado de alta a mano en la colección
+    // "members" desde la consola de Firebase. Nadie más lee ni escribe nada.
+    function member() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/members/$(request.auth.token.email.lower()));
+    }
+
+    // Cada familiar solo puede comprobar su propia alta; la lista no se puede leer
+    // entera, y solo se modifica desde la consola de Firebase.
+    match /members/{email} {
+      allow get: if request.auth != null
+                 && request.auth.token.email != null
+                 && request.auth.token.email.lower() == email;
+      allow list, write: if false;
+    }
+
+    // Nombre del paciente. Es único para toda la familia.
+    match /config/{doc} {
+      allow read, write: if member();
+    }
+
+    // LA HOJA COMPARTIDA. Un documento por semana, el identificador es el
+    // domingo en que empieza. Todos los familiares autorizados la ven y la anotan.
+    match /sheets/{week} {
+      allow read, write: if member();
+    }
+
+    // Tomas guardadas por la versión anterior, cuando cada cuenta tenía las suyas.
+    // Se dejan accesibles solo a su dueño para poder traerlas a la hoja compartida
+    // y borrarlas después. Una vez migradas, este bloque se puede eliminar.
+    match /users/{uid}/sheets/{id} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // La antigua lista de "compartidos" ya no se usa.
+    match /shares/{id} {
+      allow read, write: if false;
+    }
+  }
+}

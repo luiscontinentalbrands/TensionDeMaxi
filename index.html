@@ -15,7 +15,7 @@
     projectId: "tension-tracker-1267b",
     appId: "1:912155916325:web:ba370ea32b2a113d40e7cc"
   };
-  window.PACIENTE = "Maximiliano Murillo";   // Nombre que aparece en las hojas nuevas
+  window.PACIENTE = "Maximiliano Murillo";   // Nombre que aparece en la hoja
   /* ========================================================================== */
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -31,14 +31,14 @@
   h1{font-size:26px;margin:0;color:var(--navy);letter-spacing:-.01em}
   h2{font-size:17px;margin:0 0 8px;color:var(--navy)}
   .saved{font-size:13px;color:var(--muted);text-align:right}
-  .who{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);margin-top:4px}
+  .who{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);margin-top:4px;gap:8px}
+  .who span{overflow-wrap:anywhere}
   .link{background:none;border:0;color:var(--ink);text-decoration:underline;cursor:pointer;padding:4px 0}
   .field{display:block;margin-top:14px}
   .field span{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
   .field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;background:#fff}
-  .row{display:flex;gap:8px;align-items:flex-end}
-  .row .field{flex:1}
   .note{background:var(--soft);border-left:4px solid var(--navy);padding:10px 12px;margin-top:14px;font-size:14px}
+  .note .btn{margin-top:10px}
   .banner{background:var(--navy);color:#fff;text-align:center;font-weight:700;padding:8px;margin:18px 0 0;font-size:17px}
   .days{display:flex;gap:6px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}
   .days button{flex:0 0 auto;min-width:56px;border:1px solid var(--rule);background:#fff;border-radius:8px;padding:6px 8px;text-align:center;cursor:pointer}
@@ -57,12 +57,12 @@
   .grid td.lbl{padding:0 10px;font-size:15px;white-space:nowrap;width:30%}
   .grid input{width:100%;border:0;background:transparent;text-align:center;padding:12px 4px;font-size:24px;color:var(--ink);font-variant-numeric:tabular-nums;font-weight:500}
   .grid input::placeholder{color:#c3c9d6;font-size:18px}
-  .grid input:disabled{color:var(--ink);-webkit-text-fill-color:var(--ink);opacity:1}
   .summary{margin-top:20px;border-top:2px solid var(--navy);padding-top:12px}
   .avg{display:flex;gap:18px;flex-wrap:wrap}
   .avg div{font-size:14px;color:var(--muted)}
   .avg b{display:block;font-size:24px;color:var(--text);font-variant-numeric:tabular-nums}
   .ref{font-size:13px;color:var(--muted);margin:10px 0 0}
+  .by{font-size:13px;color:var(--muted);margin:6px 0 0}
   .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
   .btn{border:0;border-radius:8px;padding:13px;font-weight:600;cursor:pointer;background:var(--navy);color:#fff}
   .btn:disabled{opacity:.5;cursor:default}
@@ -71,14 +71,6 @@
   .btn.full{grid-column:1/-1}
   .msg{font-size:13px;color:var(--muted);margin-top:8px;min-height:1em}
   .msg.err{color:var(--warn)}
-  .share{margin-top:28px;border-top:2px solid var(--navy);padding-top:12px}
-  .share p{font-size:14px;color:var(--muted);margin:0 0 8px}
-  .shl{list-style:none;padding:0;margin:0}
-  .shl li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--rule);font-size:15px}
-  .shl li span{flex:1;overflow-wrap:anywhere}
-  .shl label{font-size:13px;color:var(--muted);display:flex;gap:4px;align-items:center}
-  .chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:15px}
-  .chk input{width:20px;height:20px}
   .login{max-width:380px;margin:12vh auto 0}
   .login .btn{width:100%;margin-top:18px}
   .prevwrap{margin-top:26px}
@@ -86,7 +78,6 @@
   .sheet{font-family:Calibri,"Segoe UI",Helvetica,Arial,sans-serif;color:#333;font-size:9px}
   .sh-title{font-weight:700;color:#8B1E2D;font-size:1.35em}
   .sh-sub{color:#555;font-size:1.1em;margin-top:2px}
-  .sh-note{color:var(--ink);font-size:1.4em;margin:6px 0 4px 12%}
   .sh-banner{background:#2B3D8F;color:#fff;font-weight:700;text-align:center;padding:.35em;font-size:1.3em;margin-bottom:.8em}
   .blk{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:.9em}
   .blk td{border:1px solid #888;height:1.9em;padding:0 .4em;white-space:nowrap;overflow:hidden}
@@ -133,7 +124,12 @@
     </div>
     <div class="who"><span id="me"></span><span><button class="link" id="refresh">Actualizar</button> &nbsp; <button class="link" id="logout">Salir</button></span></div>
 
-    <div class="note" id="roNote" hidden>Solo puede ver estas tomas. Para anotar, la persona debe darle permiso.</div>
+    <!-- Traer las tomas guardadas con la versión anterior (aparece solo si las hay) -->
+    <div class="note" id="migNote" hidden>
+      <b>Hay tomas guardadas con la versión anterior de la app.</b>
+      <div id="migTxt"></div>
+      <button class="btn" id="migBtn">Traer esas tomas a la hoja compartida</button>
+    </div>
 
     <div id="empty" class="note" hidden>Todavía no hay ninguna semana anotada.</div>
 
@@ -152,6 +148,7 @@
         <h2>Media de esta semana</h2>
         <div class="avg" id="avg"></div>
         <p class="ref">Referencia habitual para tomas en casa: por debajo de 135/85. Comente siempre sus cifras con su médico.</p>
+        <p class="by" id="by"></p>
       </div>
 
       <div class="actions">
@@ -161,15 +158,6 @@
       </div>
     </div>
     <div class="msg" id="msg"></div>
-
-    <div class="share" id="shareUI">
-      <h2>Compartir mis tomas</h2>
-      <p>Las personas de esta lista pueden ver sus tomas al entrar con su correo. Deben tener una cuenta en la app.</p>
-      <ul class="shl" id="shareList"></ul>
-      <label class="field"><span>Correo de la persona</span><input id="shareEmail" type="email" placeholder="nombre@correo.com"></label>
-      <label class="chk"><input type="checkbox" id="shareEdit"> También puede anotar tomas</label>
-      <div class="actions"><button class="btn full" id="shareBtn">Compartir</button></div>
-    </div>
 
     <div class="prevwrap" id="prevUI">
       <h2>Así se imprimirá</h2>
@@ -181,7 +169,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -200,16 +188,17 @@ function label(start){return 'Del '+dmy(start)+' hasta el '+dmy(addDays(start,6)
 function emptyDays(start){const a=[];for(let i=0;i<7;i++)a.push({date:addDays(start,i),m:blank(),t:blank()});return a;}
 // Firestore no admite listas dentro de listas: se guardan como {s,d}
 const toFs=days=>days.map(d=>({date:d.date,m:d.m.map(p=>({s:p[0],d:p[1]})),t:d.t.map(p=>({s:p[0],d:p[1]}))}));
-const fromFs=days=>days.map(d=>({date:d.date,m:d.m.map(p=>[p.s||'',p.d||'']),t:d.t.map(p=>[p.s||'',p.d||''])}));
+const fromFs=days=>(days||[]).map(d=>({date:d.date,m:(d.m||[]).map(p=>[p.s||'',p.d||'']),t:(d.t||[]).map(p=>[p.s||'',p.d||''])}));
 
 let auth=null, db=null, user=null, myEmail='';
-let owners=[], myShares=[], ownerId=null, sheets=[], sheetId=null, day=0;
-let saveT=null, pending=false, unsub=null, firstSnap=false;
+let sheets=[], sheetId=null, day=0, patientName=PACIENTE;
+let saveT=null, patT=null, pending=false, unsub=null, unsubCfg=null, firstSnap=false;
 
-const owner=()=>owners.find(o=>o.id===ownerId);
+/* Una sola hoja compartida: todas las semanas del paciente viven aquí y
+   cualquier familiar autorizado las ve y las anota. No hay hojas por persona. */
+const SHEETS=()=>collection(db,'sheets');
+const CONFIG=()=>doc(db,'config','app');
 const sheet=()=>sheets.find(s=>s.id===sheetId);
-const canEdit=()=>{const o=owner();return !!o&&(o.mine||o.canEdit);};
-const sheetsCol=id=>collection(db,'users',id,'sheets');
 function status(t){$('saved').textContent=t;}
 function say(t,err){const m=$('msg');m.textContent=t||'';m.className='msg'+(err?' err':'');}
 function errText(e){
@@ -232,7 +221,7 @@ function init(){
   setPersistence(auth,browserLocalPersistence).catch(()=>{});
   onAuthStateChanged(auth,u=>{u?enter(u):showLogin();});
 }
-function showLogin(msg){user=null;$('main').hidden=true;$('login').hidden=false;
+function showLogin(msg){user=null;stopWatching();$('main').hidden=true;$('login').hidden=false;
   const m=$('loginMsg');m.textContent=msg||'';m.className='msg'+(msg?' err':'');}
 async function login(){
   const email=$('email').value.trim(), password=$('pass').value, m=$('loginMsg');
@@ -250,10 +239,10 @@ async function login(){
 }
 async function enter(u){
   user=u;myEmail=(u.email||'').toLowerCase();
-  // Comprobar la autorización, reintentando si falla la conexión.
+  // Solo entran los correos que el administrador haya dado de alta en "members".
   let mem=null, lastErr=null;
   for(let i=0;i<3;i++){
-    try{mem=await getDoc(doc(db,'members',u.uid));lastErr=null;break;}
+    try{mem=await getDoc(doc(db,'members',myEmail));lastErr=null;break;}
     catch(e){lastErr=e;if(i<2)await new Promise(r=>setTimeout(r,700*(i+1)));}
   }
   if(lastErr&&!(lastErr.code||'').includes('permission-denied')){
@@ -265,43 +254,31 @@ async function enter(u){
     showLogin('Su cuenta aún no está autorizada. Pida al administrador que la active.');return;
   }
   $('login').hidden=true;$('main').hidden=false;
-  await loadOwners();watchSheets();
+  $('me').textContent=myEmail;
+  watchConfig();watchSheets();checkLegacy();
 }
 
 /* ---------- Datos ---------- */
-async function loadOwners(){
-  try{
-    const [mine,toMe]=await Promise.all([
-      getDocs(query(collection(db,'shares'),where('owner','==',user.uid))),
-      getDocs(query(collection(db,'shares'),where('viewerEmail','==',myEmail)))
-    ]);
-    myShares=mine.docs.map(d=>d.data()).sort((a,b)=>a.viewerEmail.localeCompare(b.viewerEmail));
-    owners=[{id:user.uid,email:myEmail,name:'Mis tomas',canEdit:true,mine:true}];
-    toMe.docs.map(d=>d.data()).filter(r=>r.owner!==user.uid)
-      .forEach(r=>owners.push({id:r.owner,email:r.ownerEmail,name:r.ownerEmail,canEdit:!!r.canEdit,mine:false}));
-  }catch(e){say('No se pudieron cargar los permisos: '+errText(e),true);
-    owners=[{id:user.uid,email:myEmail,name:'Mis tomas',canEdit:true,mine:true}];}
-  // Con una sola persona no hace falta elegir: si alguien comparte sus tomas
-  // conmigo, trabajo sobre esas; si no, sobre las mías.
-  if(!owners.some(o=>o.id===ownerId)){
-    const shared=owners.find(o=>!o.mine);
-    ownerId=shared?shared.id:user.uid;
-  }
-  renderOwners();renderShares();
+// El nombre del paciente es único para todos.
+function watchConfig(){
+  if(unsubCfg){unsubCfg();unsubCfg=null;}
+  unsubCfg=onSnapshot(CONFIG(),d=>{
+    patientName=(d.exists()&&d.data().patient)||PACIENTE;
+    if(document.activeElement!==$('patient'))$('patient').value=patientName;
+    if(sheet())renderSheet();
+  },()=>{});
 }
-// Escucha en directo: cualquier cambio de otra persona llega solo.
+// Escucha en directo: lo que anota un familiar aparece en el móvil de los demás.
 function watchSheets(){
   stopWatching();
   status('Cargando…');firstSnap=true;
-  unsub=onSnapshot(sheetsCol(ownerId),{includeMetadataChanges:false},async snap=>{
+  unsub=onSnapshot(SHEETS(),{includeMetadataChanges:false},async snap=>{
     const list=snap.docs.map(d=>{const x=d.data();return {id:d.id,...x,days:fromFs(x.days)};})
       .sort((a,b)=>b.startDate.localeCompare(a.startDate));
-    const o=owner();
     if(firstSnap){
       firstSnap=false;sheets=list;
       if(await ensureThisWeek())return;
     }
-    if(o&&!o.mine&&list[0]?.patient){o.name=list[0].patient+' ('+o.email+')';renderOwners();}
     // Si hay cambios propios sin guardar, no pisar lo que se está escribiendo.
     if(pending||snap.metadata.hasPendingWrites){sheets=mergeKeepingMine(list);status('Guardando…');return;}
     sheets=list;
@@ -315,27 +292,32 @@ function watchSheets(){
     status('');say('No se pudieron cargar las tomas: '+errText(err),true);
   });
 }
-function stopWatching(){if(unsub){unsub();unsub=null;}}
+function stopWatching(){if(unsub){unsub();unsub=null;}if(unsubCfg){unsubCfg();unsubCfg=null;}}
 // Conserva la hoja que se está editando y actualiza el resto.
 function mergeKeepingMine(list){
   return list.map(x=>x.id===sheetId?(sheets.find(s=>s.id===sheetId)||x):x);
 }
 function todayIndex(){const s=sheet();if(!s)return 0;const i=s.days.findIndex(d=>d.date===toIso(new Date()));return i<0?0:i;}
-// El identificador del documento es la fecha de inicio, así dos móviles
-// nunca crean dos hojas para la misma semana.
+// El identificador del documento es el domingo en que empieza la semana, así
+// dos móviles nunca crean dos hojas para la misma semana. La transacción
+// garantiza que, si ya existe, no se pisa lo que otro familiar haya anotado.
 async function createSheet(start){
-  const o=owner(), prev=sheets[0];
-  const row={ownerEmail:o.email,patient:prev?.patient||PACIENTE,note:prev?.note||'',startDate:start,updatedAt:new Date().toISOString()};
-  const days=emptyDays(start);
+  const ref=doc(SHEETS(),start);
   try{
-    await setDoc(doc(sheetsCol(o.id),start),{...row,days:toFs(days)});
-    if(!sheets.some(s=>s.id===start)){sheets.push({id:start,...row,days});sheets.sort((a,b)=>b.startDate.localeCompare(a.startDate));}
+    await runTransaction(db,async tx=>{
+      const snap=await tx.get(ref);
+      if(snap.exists())return;
+      tx.set(ref,{startDate:start,updatedAt:new Date().toISOString(),updatedBy:myEmail,days:toFs(emptyDays(start))});
+    });
+    if(!sheets.some(s=>s.id===start)){
+      sheets.push({id:start,startDate:start,updatedAt:new Date().toISOString(),updatedBy:myEmail,days:emptyDays(start)});
+      sheets.sort((a,b)=>b.startDate.localeCompare(a.startDate));
+    }
     sheetId=start;day=todayIndex();status('Guardado');renderAll();
-  }catch(e){say('No se pudo crear la semana: '+errText(e),true);}
+  }catch(e){say('No se pudo preparar la semana nueva: '+errText(e),true);}
 }
 // Comprueba si falta la hoja de la semana en curso y la crea.
 async function ensureThisWeek(){
-  const o=owner();if(!o||!canEdit())return false;
   const start=weekStart();
   if(sheets.some(s=>s.startDate===start))return false;
   await createSheet(start);return true;
@@ -345,34 +327,71 @@ async function flush(){
   clearTimeout(saveT);const s=sheet();if(!s||!pending)return;
   pending=false;
   try{
-    await updateDoc(doc(db,'users',ownerId,'sheets',s.id),{days:toFs(s.days),patient:s.patient,updatedAt:new Date().toISOString()});
+    await updateDoc(doc(SHEETS(),s.id),{days:toFs(s.days),updatedAt:new Date().toISOString(),updatedBy:myEmail});
     status('Guardado');
   }catch(e){pending=true;status('Sin guardar');say('No se pudo guardar. Revise la conexión y pulse Actualizar.',true);}
 }
 
+/* ---------- Tomas de la versión anterior ---------- */
+// Antes cada cuenta guardaba sus tomas por separado en users/<cuenta>/sheets.
+// Esto las trae a la hoja compartida sin pisar nada de lo que ya haya.
+async function legacyDays(){
+  const out=new Map();
+  try{
+    const snap=await getDocs(collection(db,'users',user.uid,'sheets'));
+    snap.docs.forEach(d=>fromFs(d.data().days).forEach(x=>{
+      if(hasData(x)&&!out.has(x.date))out.set(x.date,x);
+    }));
+  }catch(e){}
+  return out;
+}
+async function checkLegacy(){
+  const old=await legacyDays();
+  if(!old.size){$('migNote').hidden=true;return;}
+  const fechas=[...old.keys()].sort().map(fmt).join(', ');
+  $('migTxt').textContent='Se han encontrado tomas de: '+fechas+'.';
+  $('migNote').hidden=false;
+}
+async function migrate(){
+  $('migBtn').disabled=true;say('Trayendo las tomas antiguas…');
+  const old=await legacyDays();
+  if(!old.size){$('migNote').hidden=true;say('No hay tomas antiguas que traer.');return;}
+  const weeks=new Map();
+  old.forEach((d,date)=>{const w=weekStart(parse(date));if(!weeks.has(w))weeks.set(w,[]);weeks.get(w).push(d);});
+  try{
+    for(const [w,days] of weeks){
+      const ref=doc(SHEETS(),w);
+      await runTransaction(db,async tx=>{
+        const snap=await tx.get(ref);
+        const cur=snap.exists()?fromFs(snap.data().days):emptyDays(w);
+        days.forEach(src=>{
+          const dst=cur.find(x=>x.date===src.date);if(!dst)return;
+          ['m','t'].forEach(k=>(src[k]||[]).forEach((p,i)=>{
+            // Solo se rellena lo que esté vacío: nunca se borra una toma ya anotada.
+            if(dst[k][i]&&!dst[k][i][0]&&!dst[k][i][1]&&(p[0]||p[1]))dst[k][i]=[p[0],p[1]];
+          }));
+        });
+        tx.set(ref,{startDate:w,updatedAt:new Date().toISOString(),updatedBy:myEmail,days:toFs(cur)},{merge:true});
+      });
+    }
+    $('migNote').hidden=true;
+    say('Listo: se han traído las tomas de '+old.size+' día'+(old.size>1?'s':'')+'.');
+  }catch(e){say('No se pudieron traer las tomas antiguas: '+errText(e),true);}
+  $('migBtn').disabled=false;
+}
+
 /* ---------- Pintar ---------- */
-function renderOwners(){
-  const o=owner();
-  $('me').textContent=(user?user.email:'')+(o&&!o.mine?'  ·  tomas de '+o.email:'');
-}
-function renderShares(){
-  $('shareList').innerHTML=myShares.length?myShares.map(r=>`<li><span>${esc(r.viewerEmail)}</span>
-    <label><input type="checkbox" data-edit="${esc(r.viewerEmail)}" ${r.canEdit?'checked':''}> anotar</label>
-    <button class="link" data-del="${esc(r.viewerEmail)}">Quitar</button></li>`).join('')
-    :'<li><span>Todavía no comparte sus tomas con nadie.</span></li>';
-}
 function renderAll(){
-  const o=owner(), s=sheet(), ed=canEdit();
-  $('roNote').hidden=ed;$('empty').hidden=!!s;
+  const s=sheet();
+  $('empty').hidden=!!s;
   $('sheetUI').hidden=!s;$('dayUI').hidden=!s;$('prevUI').hidden=!s;
-  $('shareUI').hidden=!o?.mine;$('delBtn').hidden=!o?.mine;
   if(!s)return;
-  $('patient').value=s.patient||'';$('patient').disabled=!ed;
+  if(document.activeElement!==$('patient'))$('patient').value=patientName;
   $('sheetSel').innerHTML=sheets.map(x=>`<option value="${esc(x.id)}">${esc(label(x.startDate))}</option>`).join('');
   $('sheetSel').value=s.id;
   renderDays();renderGrid();renderSummary();renderSheet();
 }
-function hasData(d){return [...d.m,...d.t].some(p=>p[0]||p[1]);}
+function hasData(d){return [...(d.m||[]),...(d.t||[])].some(p=>p[0]||p[1]);}
 function renderDays(){
   const s=sheet();
   $('days').innerHTML=s.days.map((d,i)=>{const dt=parse(d.date);
@@ -380,11 +399,11 @@ function renderDays(){
   $('fechaTxt').textContent=fmt(s.days[day].date);
 }
 function renderGrid(){
-  const d=sheet().days[day], dis=canEdit()?'':'disabled';
+  const d=sheet().days[day];
   const part=(k,title)=>`<tr><th class="part" colspan="3">${title}</th></tr><tr><th></th><th>Máxima</th><th>Mínima</th></tr>`+
     d[k].map((p,i)=>`<tr><td class="lbl">Toma ${i+1}</td>
-      <td><input ${dis} inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="—" aria-label="${title} toma ${i+1} máxima" data-k="${k}" data-i="${i}" data-j="0" value="${esc(p[0])}"></td>
-      <td><input ${dis} inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="—" aria-label="${title} toma ${i+1} mínima" data-k="${k}" data-i="${i}" data-j="1" value="${esc(p[1])}"></td></tr>`).join('');
+      <td><input inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="—" aria-label="${title} toma ${i+1} máxima" data-k="${k}" data-i="${i}" data-j="0" value="${esc(p[0])}"></td>
+      <td><input inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="—" aria-label="${title} toma ${i+1} mínima" data-k="${k}" data-i="${i}" data-j="1" value="${esc(p[1])}"></td></tr>`).join('');
   $('grid').innerHTML=part('m','Por la mañana')+part('t','Por la tarde');
 }
 function mean(a){return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;}
@@ -392,11 +411,13 @@ function collect(keys){const S=[],D=[];sheet().days.forEach(d=>keys.forEach(k=>d
 function renderSummary(){
   const box=(l,r)=>`<div>${l}<b>${r.n?r.s+'/'+r.d:'—'}</b>${r.n?r.n+' toma'+(r.n>1?'s':''):'sin datos'}</div>`;
   $('avg').innerHTML=box('Mañana',collect(['m']))+box('Tarde',collect(['t']))+box('Total',collect(['m','t']));
+  const s=sheet();
+  $('by').textContent=s&&s.updatedBy?'Última anotación: '+s.updatedBy+(s.updatedAt?' · '+new Date(s.updatedAt).toLocaleString('es-ES'):''):'';
 }
 function renderSheet(){
-  const s=sheet();
+  const s=sheet();if(!s)return;
   const rows=d=>[0,1,2].map(i=>`<tr><td>Toma ${i+1}</td><td class="v">${esc(d.m[i][0])}</td><td class="v">${esc(d.m[i][1])}</td><td>Toma ${i+1}</td><td class="v">${esc(d.t[i][0])}</td><td class="v">${esc(d.t[i][1])}</td></tr>`).join('');
-  $('sheet').innerHTML=`<div class="sh-title">Registro de tensión arterial</div><div class="sh-sub">Paciente: ${esc(s.patient)}</div>
+  $('sheet').innerHTML=`<div class="sh-title">Registro de tensión arterial</div><div class="sh-sub">Paciente: ${esc(patientName)}</div>
     <div class="sh-sub">${esc(label(s.startDate))}</div><div class="sh-banner">Anote su tensión</div>`+
     s.days.map(d=>`<table class="blk"><colgroup><col style="width:15%"><col style="width:19.5%"><col style="width:19.5%"><col style="width:14%"><col style="width:16%"><col style="width:16%"></colgroup>
       <tr><td colspan="6"><b>Fecha:</b><span class="hw">${fmt(d.date)}</span></td></tr>
@@ -410,7 +431,7 @@ function makePdf(){
   const s=sheet(), x0=15, W=180, cols=[27,35,35,25,29,29], hs=[5,4.5,4.5,5,5,5];
   const cx=i=>x0+cols.slice(0,i).reduce((a,b)=>a+b,0);
   pdf.setFont('helvetica','bold');pdf.setFontSize(13);pdf.setTextColor(139,30,45);pdf.text('Registro de tensión arterial',x0,16);
-  pdf.setFont('helvetica','normal');pdf.setFontSize(10);pdf.setTextColor(80);pdf.text('Paciente: '+(s.patient||''),x0,22);
+  pdf.setFont('helvetica','normal');pdf.setFontSize(10);pdf.setTextColor(80);pdf.text('Paciente: '+(patientName||''),x0,22);
   pdf.setTextColor(80);pdf.setFontSize(10);pdf.text(label(s.startDate),x0,27);
   pdf.setFillColor(43,61,143);pdf.rect(x0,31,W,8,'F');
   pdf.setTextColor(255);pdf.setFont('helvetica','bold');pdf.setFontSize(12);pdf.text('Anote su tensión',x0+W/2,36.6,{align:'center'});
@@ -443,45 +464,30 @@ function makePdf(){
 $('loginBtn').addEventListener('click',login);
 $('pass').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 $('logout').addEventListener('click',async()=>{if(pending)await flush();stopWatching();await signOut(auth);});
-$('refresh').addEventListener('click',async()=>{say('');if(pending)await flush();await loadOwners();watchSheets();});
+$('refresh').addEventListener('click',async()=>{say('');if(pending)await flush();watchConfig();watchSheets();checkLegacy();});
+$('migBtn').addEventListener('click',migrate);
 $('sheetSel').addEventListener('change',async e=>{if(pending)await flush();sheetId=e.target.value;day=todayIndex();renderAll();});
 $('days').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;day=+b.dataset.i;renderDays();renderGrid();});
 $('grid').addEventListener('input',e=>{
-  const t=e.target;if(t.tagName!=='INPUT'||!canEdit())return;
+  const t=e.target;if(t.tagName!=='INPUT')return;
   t.value=t.value.replace(/\D/g,'').slice(0,3);
   sheet().days[day][t.dataset.k][+t.dataset.i][+t.dataset.j]=t.value;
   queueSave();renderSummary();renderSheet();
   const dot=$('days').querySelectorAll('.dot')[day];if(dot)dot.classList.toggle('f',hasData(sheet().days[day]));
 });
-$('patient').addEventListener('input',e=>{if(!canEdit())return;sheet().patient=e.target.value;queueSave();renderSheet();});
+$('patient').addEventListener('input',e=>{
+  patientName=e.target.value;renderSheet();
+  clearTimeout(patT);patT=setTimeout(()=>{
+    setDoc(CONFIG(),{patient:patientName,updatedBy:myEmail},{merge:true})
+      .catch(err=>say('No se pudo guardar el nombre: '+errText(err),true));
+  },700);
+});
 $('delBtn').addEventListener('click',async()=>{
-  const s=sheet();if(!s||!confirm('¿Borrar la hoja «'+label(s.startDate)+'»? No se puede deshacer.'))return;
+  const s=sheet();if(!s||!confirm('¿Borrar la hoja «'+label(s.startDate)+'»? La borra para toda la familia y no se puede deshacer.'))return;
   pending=false;clearTimeout(saveT);
-  try{await deleteDoc(doc(db,'users',ownerId,'sheets',s.id));}
+  try{await deleteDoc(doc(SHEETS(),s.id));}
   catch(e){say('No se pudo borrar: '+errText(e),true);return;}
   sheets=sheets.filter(x=>x.id!==s.id);sheetId=sheets[0]?.id||null;day=todayIndex();renderAll();say('Semana borrada.');
-});
-$('shareBtn').addEventListener('click',async()=>{
-  const email=$('shareEmail').value.trim().toLowerCase(), canEdit=$('shareEdit').checked;
-  if(!/^[^\s@\/]+@[^\s@\/]+\.[^\s@\/]+$/.test(email)){say('Escriba un correo válido.',true);return;}
-  if(email===myEmail){say('Ese es su propio correo.',true);return;}
-  if(myShares.some(r=>r.viewerEmail===email)){say('Ya comparte sus tomas con ese correo.',true);return;}
-  try{await setDoc(doc(db,'shares',user.uid+'_'+email),{owner:user.uid,ownerEmail:myEmail,viewerEmail:email,canEdit});}
-  catch(e){say('No se pudo compartir: '+errText(e),true);return;}
-  $('shareEmail').value='';$('shareEdit').checked=false;say('Compartido con '+email+'.');await loadOwners();
-});
-$('shareList').addEventListener('click',async e=>{
-  const em=e.target.dataset.del;if(!em)return;
-  if(!confirm('¿Dejar de compartir con '+em+'?'))return;
-  try{await deleteDoc(doc(db,'shares',user.uid+'_'+em));}
-  catch(err){say('No se pudo quitar: '+errText(err),true);return;}
-  say('Ya no comparte sus tomas con '+em+'.');await loadOwners();
-});
-$('shareList').addEventListener('change',async e=>{
-  const em=e.target.dataset.edit;if(!em)return;
-  try{await updateDoc(doc(db,'shares',user.uid+'_'+em),{canEdit:e.target.checked});}
-  catch(err){say('No se pudo cambiar el permiso: '+errText(err),true);e.target.checked=!e.target.checked;return;}
-  say(e.target.checked?em+' ya puede anotar.':em+' ahora solo puede ver.');await loadOwners();
 });
 $('printBtn').addEventListener('click',async()=>{if(pending)await flush();window.print();});
 $('pdfBtn').addEventListener('click',async()=>{
